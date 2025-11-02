@@ -1,82 +1,189 @@
 <!DOCTYPE html>
+<!--
+  تطبيق: حاسِب ساعات العمل / Arbeitszeitrechner
+  المؤلف: KeFo.tech
+  المزايا: تعدد اللغات (ar/de)، تقويم شهري، إدخال دوام لكل يوم، حساب إجمالي وساعات إضافية،
+          حفظ محلي localStorage، تقرير PDF (طباعة)، واجهة متجاوبة للجوال.
+-->
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <title>حاسِب ساعات العمل · Arbeitszeitrechner</title>
+
   <style>
+    /* --------- ألوان وهوية عامة (داكن + لمسة سماوي/بنفسجي) --------- */
     :root{
-      --bg:#0f172a; --panel:#111827; --panel-2:#1f2937; --muted:#9ca3af; --text:#e5e7eb;
-      --primary:#22d3ee; --accent:#a78bfa; --success:#34d399; --danger:#f87171; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:18px;
+      --bg:#0f172a;           /* خلفية الصفحة (slate-900) */
+      --panel:#111827;        /* خلفيات البطاقات */
+      --panel-2:#1f2937;      /* درجة أغمق للتمييز */
+      --muted:#9ca3af;        /* نص ثانوي */
+      --text:#e5e7eb;         /* نص رئيسي */
+      --primary:#22d3ee;      /* تدرج أساسي */
+      --accent:#a78bfa;       /* تدرج ثانٍ */
+      --success:#34d399;      /* لون النجاح */
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font-family:"Tajawal",system-ui,-apple-system,Segoe UI,Roboto,"Noto Kufi Arabic",Arial,sans-serif;background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(167,139,250,.15), transparent),
-      radial-gradient(800px 400px at 10% 110%, rgba(34,211,238,.12), transparent), var(--bg); color:var(--text)}
-    header{position:sticky;top:0;z-index:5;backdrop-filter:saturate(140%) blur(10px);background:linear-gradient(180deg, rgba(15,23,42,.9), rgba(15,23,42,.6));border-bottom:1px solid rgba(255,255,255,.05)}
-    .wrap{max-width:1100px;margin:0 auto;padding:clamp(10px,3vw,16px)}
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:clamp(6px,2vw,12px);flex-wrap:wrap}
-    .brand{display:flex;align-items:center;gap:10px}
-    .logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--accent));color:#0b1020;font-weight:800;box-shadow:var(--shadow)}
-    h1{font-size:1.25rem;margin:0;font-weight:800}
-    .summary{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-    .chip{background:var(--panel-2);border:1px solid rgba(255,255,255,.06);padding:6px clamp(8px,2vw,12px);border-radius:999px;font-size:clamp(.78rem,2.4vw,.92rem);display:flex;gap:6px;align-items:center;min-height:32px}
-    .chip b{color:#fff}
-    .btn{appearance:none;border:0;background:var(--panel-2);color:var(--text);padding:8px 12px;border-radius:12px;cursor:pointer;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.06);font-weight:700;transition:.2s transform,.2s opacity}
-    .btn:hover{transform:translateY(-1px)}
-    .btn-primary{background:linear-gradient(135deg,var(--primary),var(--accent));color:#0b1020}
-    .btn-danger{background:linear-gradient(135deg,#fb7185,#fbbf24);color:#0b1020}
 
-    main{max-width:1100px;margin:clamp(12px,3.5vw,24px) auto;padding:clamp(10px,3vw,16px)}
-    .panel{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(12px,3vw,16px);overflow:hidden}
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
 
-    /* Setup */
-    #setup{max-width:680px;margin:56px auto}
-    .q{display:flex;flex-direction:column;gap:10px;margin:14px 0}
-    label{color:#cbd5e1;font-weight:700}
-    input[type="number"],input[type="time"],select{width:100%;background:var(--panel);border:1px solid rgba(255,255,255,.08);color:var(--text);padding:12px 14px;border-radius:12px;outline:none}
-    .hint{color:var(--muted);font-size:.9rem}
+    /* خلفية متدرجة + خط عربي لطيف */
+    body{
+      margin:0;
+      font-family:"Tajawal", system-ui, -apple-system, Segoe UI, Roboto, "Noto Kufi Arabic", Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(167,139,250,.15), transparent),
+        radial-gradient(800px 400px at 10% 110%, rgba(34,211,238,.12), transparent),
+        var(--bg);
+      color:var(--text);
+    }
 
-    /* Calendar */
-    .month-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:10px}
-    .month-title{text-align:center;font-size:clamp(1.05rem,4vw,1.3rem);font-weight:900}
-    .nav{display:flex;gap:8px}
-    .cal-head{margin-bottom:12px}
-    .cal-grid{display:grid;gap:clamp(4px,1.8vw,8px);grid-template-columns:repeat(7,minmax(0,1fr));width:100%}
-    .dow{color:var(--muted);font-weight:700;text-align:center;padding:8px 0}
-    .day{background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:14px;min-height:clamp(56px,12vw,100px);padding:clamp(6px,2vw,8px);position:relative;display:flex;flex-direction:column;gap:clamp(4px,1.2vw,8px);align-items:center}
-    .day .dnum{font-weight:800;color:#fff;font-size:clamp(.8rem,3vw,1rem)}
-    .badge{font-size:clamp(.75rem,2.8vw,.95rem);padding:clamp(3px,.8vw,6px) clamp(6px,1.6vw,10px);border-radius:10px;background:var(--panel-2);border:1px solid rgba(255,255,255,.08)}
-    .badge.work{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.35);color:#a7f3d0}
-    .day .edit{position:absolute;inset-inline-end:8px;inset-block-start:8px;font-size:.8rem;opacity:.9}
-    .day.disabled{opacity:.35;filter:grayscale(30%)}
-    .today{outline:2px dashed var(--primary);outline-offset:2px}
+    /* شريط علوي ثابت مع تعتيم */
+    header{
+      position:sticky; top:0; z-index:5;
+      backdrop-filter:saturate(140%) blur(10px);
+      background:linear-gradient(180deg, rgba(15,23,42,.9), rgba(15,23,42,.6));
+      border-bottom:1px solid rgba(255,255,255,.05);
+    }
+    .wrap{ max-width:1100px; margin:0 auto; padding:clamp(10px,3vw,16px) }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:clamp(6px,2vw,12px); flex-wrap:wrap }
+    .brand{ display:flex; align-items:center; gap:10px }
+    .logo{
+      width:42px; height:42px; border-radius:12px; display:grid; place-items:center;
+      background:linear-gradient(135deg, var(--primary), var(--accent)); color:#0b1020; font-weight:800; box-shadow:var(--shadow)
+    }
+    h1{ font-size:1.25rem; margin:0; font-weight:800 }
 
-    /* Modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40}
-    .modal{width:min(580px,94vw);background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
-    .modal header{position:initial;background:var(--panel-2)}
-    .modal .content{padding:16px}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .footer{display:flex;justify-content:space-between;gap:10px;padding:12px 16px}
+    /* شارات الملخص */
+    .summary{ display:flex; flex-wrap:wrap; gap:6px; align-items:center }
+    .chip{
+      background:var(--panel-2); border:1px solid rgba(255,255,255,.06);
+      padding:6px clamp(8px,2vw,12px); border-radius:999px;
+      font-size:clamp(.78rem,2.4vw,.92rem); display:flex; gap:6px; align-items:center; min-height:32px
+    }
+    .chip b{ color:#fff }
 
-    /* Print */
-    @media print{body{background:#fff;color:#000}header,.summary,.month-header .nav,#calendar .hint{display:none!important}#printArea{display:block!important}}
+    /* الأزرار */
+    .btn{
+      appearance:none; border:0; background:var(--panel-2); color:var(--text);
+      padding:8px 12px; border-radius:12px; cursor:pointer; box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,.06); font-weight:700; transition:.2s transform,.2s opacity
+    }
+    .btn:hover{ transform:translateY(-1px) }
+    .btn-primary{ background:linear-gradient(135deg, var(--primary), var(--accent)); color:#0b1020 }
+    .btn-danger{ background:linear-gradient(135deg, #fb7185, #fbbf24); color:#0b1020 }
 
-    footer{margin:24px auto;max-width:1100px;padding:0 16px 24px;color:var(--muted);text-align:center}
+    /* الحاوية الرئيسية */
+    main{ max-width:1100px; margin:clamp(12px,3.5vw,24px) auto; padding:clamp(10px,3vw,16px) }
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:clamp(12px,3vw,16px); overflow:hidden
+    }
+
+    /* شاشة الإعداد السريع */
+    #setup{ max-width:680px; margin:56px auto }
+    .q{ display:flex; flex-direction:column; gap:10px; margin:14px 0 }
+    label{ color:#cbd5e1; font-weight:700 }
+    input[type="number"], input[type="time"], select{
+      width:100%; background:var(--panel); border:1px solid rgba(255,255,255,.08);
+      color:var(--text); padding:12px 14px; border-radius:12px; outline:none
+    }
+    .hint{ color:var(--muted); font-size:.9rem }
+
+    /* --------- التقويم: عنوان الشهر + رؤوس أيام الأسبوع --------- */
+    .month-header{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; margin-bottom:10px }
+    .month-title{ text-align:center; font-size:clamp(1.05rem,4vw,1.3rem); font-weight:900 }
+    .nav{ display:flex; gap:8px }
+
+    /* شبكة (رؤوس) أيام الأسبوع */
+    .cal-grid{ display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; width:100% }
+    .dow{
+      text-align:center; font-weight:700; color:var(--muted);
+      font-size:clamp(0.8rem, 2.2vw, 0.95rem);
+      white-space:nowrap;          /* منع التفاف الكلمات حتى لا تتكدس */
+      overflow:hidden;              /* إخفاء الزائد */
+      text-overflow:ellipsis;       /* إظهار ... عند ضيق العرض */
+      line-height:1.5;
+      padding:8px 0;
+    }
+
+    /* --------- خلايا أيام الشهر --------- */
+    .day{
+      background:var(--panel); border:1px solid rgba(255,255,255,.08); border-radius:14px;
+      display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+      min-height:clamp(70px, 13vw, 100px);            /* ارتفاع مرن يناسب الجوال */
+      padding:6px; position:relative;
+    }
+    .day.disabled{ opacity:.35; filter:grayscale(30%) } /* خلايا فارغة قبل اليوم الأول */
+    .today{ outline:2px dashed var(--primary); outline-offset:2px } /* تمييز اليوم الحالي */
+
+    /* رقم اليوم */
+    .day .dnum{
+      font-weight:700; color:#fff;
+      font-size:clamp(0.9rem, 2.8vw, 1rem);
+      margin-top:4px;
+    }
+
+    /* زر القلم (تعديل) — تم جعله أيقونة بسيطة لا تتضخم */
+    .day .edit{
+      position:absolute; top:6px; right:6px;
+      background:none; border:none; color:var(--muted); cursor:pointer; font-size:.9rem;
+      line-height:1; padding:2px 4px; border-radius:8px;
+      transition:.2s; user-select:none;
+    }
+    .day .edit:hover{ color:var(--primary) }
+
+    /* شارة نتيجة ساعات اليوم */
+    .day .badge{
+      font-size:clamp(.75rem, 2.5vw, .9rem);
+      padding:4px 8px; border-radius:10px;
+      background:rgba(52,211,153,.15); border:1px solid rgba(52,211,153,.3); color:#a7f3d0;
+      margin-bottom:4px;
+    }
+
+    /* نافذة منبثقة للإدخال */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:40 }
+    .modal{ width:min(580px, 94vw); background:var(--panel); border:1px solid rgba(255,255,255,.08); border-radius:18px; box-shadow:var(--shadow); overflow:hidden }
+    .modal header{ position:initial; background:var(--panel-2) }
+    .modal .content{ padding:16px }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+    .footer{ display:flex; justify-content:space-between; gap:10px; padding:12px 16px }
+
+    /* أسلوب الطباعة: نخفي الواجهة ونظهر جدول التقرير */
+    @media print{
+      body{ background:#fff; color:#000 }
+      header, .summary, .month-header .nav, #calendar .hint{ display:none !important }
+      #printArea{ display:block !important }
+    }
+
+    footer{ margin:24px auto; max-width:1100px; padding:0 16px 24px; color:var(--muted); text-align:center }
   </style>
 </head>
 <body>
+  <!-- شريط علوي: عنوان + ملخص + لغة + طباعة + إعدادات -->
   <header>
     <div class="wrap topbar">
-      <div class="brand"><div class="logo">⏱️</div><h1 id="appTitle">حاسِب ساعات العمل</h1></div>
+      <div class="brand">
+        <div class="logo">⏱️</div>
+        <h1 id="appTitle">حاسِب ساعات العمل</h1>
+      </div>
+
       <div class="summary">
-        <div class="chip"><span id="lblMonthSum">ساعات هذا الشهر</span>: <b id="sum-month">0:00</b></div>
-        <div class="chip"><span id="lblOT">العمل الإضافي</span>: <b id="sum-ot">0:00</b></div>
-        <div class="chip" style="gap:6px"><span id="lblLang">اللغة</span>:
-          <select id="langSwitcher" class="btn"><option value="de">Deutsch</option><option value="ar">العربية</option></select>
+        <div class="chip"><span id="lblMonthSum">ساعات هذا الشهر</span> : <b id="sum-month">0:00</b></div>
+        <div class="chip"><span id="lblOT">العمل الإضافي</span> : <b id="sum-ot">0:00</b></div>
+
+        <div class="chip" style="gap:6px">
+          <span id="lblLang">اللغة</span> :
+          <select id="langSwitcher" class="btn">
+            <option value="de">Deutsch</option>
+            <option value="ar">العربية</option>
+          </select>
         </div>
+
         <button class="btn" id="btnPrint">🖨️ <span id="lblPrint">تقرير PDF</span></button>
         <button class="btn" id="btnEditPolicy">⚙️ <span id="lblSettings">الإعدادات</span></button>
         <button class="btn btn-danger" id="btnResetAll">🗑️ <span id="lblReset">تصفير</span></button>
@@ -85,97 +192,405 @@
   </header>
 
   <main>
+    <!-- شاشة الإعداد: تُعرض أول مرة فقط أو عند الضغط على "الإعدادات" -->
     <section id="setup" class="panel" hidden>
       <h2 style="margin-top:0" id="setupTitle">إعداد سريع</h2>
+
       <div class="q">
         <label for="officialHours" id="qOfficial">عدد ساعات العمل الرسمية يوميًا</label>
         <input id="officialHours" type="number" min="1" max="24" step="0.25" placeholder="8" />
         <div class="hint" id="hintOfficial">سيتم حفظ هذا الإعداد ولن يُسأل مرة أخرى. يمكنك تغييره من الإعدادات.</div>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
+
+      <div style="display:flex; gap:10px; justify-content:flex-end">
         <button class="btn" id="setupSkip">تخطي</button>
         <button class="btn btn-primary" id="setupSave">التالي</button>
       </div>
     </section>
 
+    <!-- التقويم -->
     <section id="calendar" class="panel" hidden>
+      <!-- عنوان الشهر مفصول عن رؤوس الأيام: إصلاح الترتيب والوضوح -->
       <div class="month-header">
         <div class="nav"><button class="btn" id="prevMonth">◀</button></div>
         <div class="month-title" id="calTitle">—</div>
         <div class="nav"><button class="btn" id="nextMonth">▶</button></div>
       </div>
-      <div class="cal-head"><div class="cal-grid" id="dow"></div></div>
+
+      <!-- رؤوس أيام الأسبوع (يُنشئها JS) -->
+      <div class="cal-grid" id="dow"></div>
+
+      <!-- شبكة الأيام (يُنشئها JS) -->
       <div class="cal-grid" id="days"></div>
     </section>
 
+    <!-- مساحة الطباعة: يظهر جدول مُرتّب عند طباعة PDF -->
     <section id="printArea" style="display:none">
       <h2 id="reportTitle" style="margin:0 0 12px 0"></h2>
       <div id="reportMeta" style="margin-bottom:12px; color:#555"></div>
+
       <table id="reportTable" style="width:100%; border-collapse:collapse; font-family:system-ui">
-        <thead><tr>
-          <th style="border:1px solid #777; padding:6px; text-align:center" id="thDate">التاريخ</th>
-          <th style="border:1px solid #777; padding:6px; text-align:center" id="thWorked">العمل</th>
-          <th style="border:1px solid #777; padding:6px; text-align:center" id="thOT">إضافي</th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th style="border:1px solid #777; padding:6px; text-align:center" id="thDate">التاريخ</th>
+            <th style="border:1px solid #777; padding:6px; text-align:center" id="thWorked">العمل</th>
+            <th style="border:1px solid #777; padding:6px; text-align:center" id="thOT">إضافي</th>
+          </tr>
+        </thead>
         <tbody id="reportBody"></tbody>
-        <tfoot><tr>
-          <th style="border:1px solid #777; padding:6px; text-align:center" id="thTotal">الإجمالي</th>
-          <th style="border:1px solid #777; padding:6px; text-align:center" id="tdSumWorked">0:00</th>
-          <th style="border:1px solid #777; padding:6px; text-align:center" id="tdSumOT">0:00</th>
-        </tr></tfoot>
+        <tfoot>
+          <tr>
+            <th style="border:1px solid #777; padding:6px; text-align:center" id="thTotal">الإجمالي</th>
+            <th style="border:1px solid #777; padding:6px; text-align:center" id="tdSumWorked">0:00</th>
+            <th style="border:1px solid #777; padding:6px; text-align:center" id="tdSumOT">0:00</th>
+          </tr>
+        </tfoot>
       </table>
+
       <div style="margin-top:12px; font-size:.9rem">© <span id="year"></span> KeFo.tech</div>
     </section>
   </main>
 
-  <footer>© <span id="yearFoot"></span> KeFo.tech — <span id="rights">جميع الحقوق محفوظة</span></footer>
+  <footer>
+    © <span id="yearFoot"></span> KeFo.tech — <span id="rights">جميع الحقوق محفوظة</span>
+  </footer>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function(){
-      const i18n = {
-        de:{appTitle:'Arbeitszeitrechner',monthSum:'Stunden dieses Monats',overtime:'Überstunden',language:'Sprache',settings:'Einstellungen',reset:'Zurücksetzen',setupTitle:'Schnelle Einrichtung',qOfficial:'Offizielle tägliche Arbeitszeit (Stunden)',hintOfficial:'Diese Einstellung wird gespeichert. Du kannst sie später in den Einstellungen ändern.',skip:'Überspringen',next:'Weiter',weekdays:['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'],start:'Arbeitsbeginn',end:'Arbeitsende',break:'Pause (Minuten)',total:'Tagesergebnis',deleteDay:'Tag löschen',now:'Jetzt',save:'Speichern',noData:'—',rights:'Alle Rechte vorbehalten',errHours:'Bitte eine Zahl zwischen 1 und 24 eingeben.',errTimes:'Bitte Beginn und Ende eingeben.',print:'PDF-Bericht',reportTitle:'Monatsbericht',thDate:'Datum',thWorked:'Arbeitszeit',thOT:'Überstunden',thTotal:'Summe'},
-        ar:{appTitle:'حاسِب ساعات العمل',monthSum:'ساعات هذا الشهر',overtime:'العمل الإضافي',language:'اللغة',settings:'الإعدادات',reset:'تصفير',setupTitle:'إعداد سريع',qOfficial:'عدد ساعات العمل الرسمية يوميًا (بالساعات)',hintOfficial:'سيتم حفظ هذا الإعداد ويمكن تغييره لاحقًا من الإعدادات.',skip:'تخطي',next:'التالي',weekdays:['الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت','الأحد'],start:'بداية الدوام',end:'نهاية الدوام',break:'مدة الاستراحة (بالدقائق)',total:'المحصلة لليوم',deleteDay:'حذف بيانات اليوم',now:'الآن',save:'حفظ',noData:'— لا بيانات —',rights:'جميع الحقوق محفوظة',errHours:'يرجى إدخال رقم صحيح بين 1 و 24',errTimes:'يرجى إدخال وقت البداية والنهاية',print:'تقرير PDF',reportTitle:'تقرير الشهر',thDate:'التاريخ',thWorked:'العمل',thOT:'إضافي',thTotal:'الإجمالي'}
+    /* ======================== الترجمة (i18n) ======================== */
+    const i18n = {
+      de: {
+        appTitle:'Arbeitszeitrechner', monthSum:'Stunden dieses Monats', overtime:'Überstunden',
+        language:'Sprache', settings:'Einstellungen', reset:'Zurücksetzen', print:'PDF-Bericht',
+        setupTitle:'Schnelle Einrichtung', qOfficial:'Offizielle tägliche Arbeitszeit (Stunden)',
+        hintOfficial:'Diese Einstellung wird gespeichert. Du kannst sie später in den Einstellungen ändern.',
+        skip:'Überspringen', next:'Weiter',
+        weekdays:['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'],
+        start:'Arbeitsbeginn', end:'Arbeitsende', break:'Pause (Minuten)', total:'Tagesergebnis',
+        deleteDay:'Tag löschen', now:'Jetzt', save:'Speichern', noData:'—',
+        rights:'Alle Rechte vorbehalten',
+        errHours:'Bitte eine Zahl zwischen 1 und 24 eingeben.',
+        errTimes:'Bitte Beginn und Ende eingeben.',
+        reportTitle:'Monatsbericht', thDate:'Datum', thWorked:'Arbeitszeit', thOT:'Überstunden', thTotal:'Summe'
+      },
+      ar: {
+        appTitle:'حاسِب ساعات العمل', monthSum:'ساعات هذا الشهر', overtime:'العمل الإضافي',
+        language:'اللغة', settings:'الإعدادات', reset:'تصفير', print:'تقرير PDF',
+        setupTitle:'إعداد سريع', qOfficial:'عدد ساعات العمل الرسمية يوميًا (بالساعات)',
+        hintOfficial:'سيتم حفظ هذا الإعداد ويمكن تغييره لاحقًا من الإعدادات.',
+        skip:'تخطي', next:'التالي',
+        weekdays:['الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت','الأحد'],
+        start:'بداية الدوام', end:'نهاية الدوام', break:'مدة الاستراحة (بالدقائق)', total:'المحصلة لليوم',
+        deleteDay:'حذف بيانات اليوم', now:'الآن', save:'حفظ', noData:'—',
+        rights:'جميع الحقوق محفوظة',
+        errHours:'يرجى إدخال رقم صحيح بين 1 و 24',
+        errTimes:'يرجى إدخال وقت البداية والنهاية',
+        reportTitle:'تقرير الشهر', thDate:'التاريخ', thWorked:'العمل', thOT:'إضافي', thTotal:'الإجمالي'
+      }
+    };
+
+    /* ======= أدوات مساعدة بسيطة ======= */
+    const $ = s => document.querySelector(s);
+    const pad = n => String(n).padStart(2,'0');
+    const fmtHM = mins => { const s = Math.max(0, Math.round(mins||0)); return `${Math.floor(s/60)}:${pad(s%60)}`; };
+    const toKey = (y,m,d)=> `${y}-${pad(m+1)}-${pad(d)}`; // m يبدأ من 0
+
+    /* ======= التخزين المحلي ======= */
+    const store = {
+      get hours(){ return parseFloat(localStorage.getItem('officialDailyHours')||'0')||0 },
+      set hours(v){ localStorage.setItem('officialDailyHours', String(v)) },
+      get logs(){ return JSON.parse(localStorage.getItem('workLogs')||'{}') },
+      set logs(obj){ localStorage.setItem('workLogs', JSON.stringify(obj)) },
+      get lang(){ return localStorage.getItem('lang') || autoDetectLang() },
+      set lang(v){ localStorage.setItem('lang', v) },
+      reset(){ localStorage.removeItem('workLogs'); localStorage.removeItem('officialDailyHours') }
+    };
+
+    let view = new Date();  // التاريخ المعروض في التقويم (شهر/سنة)
+    let activeKey = null;   // المفتاح (YYYY-MM-DD) لليوم المفتوح في النافذة
+
+    /* كشف لغة الجهاز؛ إن لم تكن ar أو de → نختار de كافتراضي */
+    function autoDetectLang(){
+      const nav = (navigator.language || 'de').toLowerCase();
+      if(nav.startsWith('ar')) return 'ar';
+      if(nav.startsWith('de')) return 'de';
+      return 'de';
+    }
+
+    /* تطبيق اللغة على النصوص والاتجاه */
+    function applyLang(){
+      const lang = store.lang;
+      const t = i18n[lang] || i18n.de;
+
+      document.documentElement.lang = lang;
+      document.documentElement.dir  = (lang==='ar') ? 'rtl' : 'ltr';
+
+      // تحديث العناوين والأزرار
+      $('#appTitle').textContent = t.appTitle;
+      $('#lblMonthSum').textContent = t.monthSum;
+      $('#lblOT').textContent = t.overtime;
+      $('#lblLang').textContent = t.language;
+      $('#lblSettings').textContent = t.settings;
+      $('#lblReset').textContent = t.reset;
+      $('#lblPrint').textContent = t.print;
+
+      // شاشة الإعداد
+      $('#setupTitle').textContent = t.setupTitle;
+      $('#qOfficial').textContent = t.qOfficial;
+      $('#hintOfficial').textContent = t.hintOfficial;
+      $('#setupSkip').textContent = t.skip;
+      $('#setupSave').textContent = t.next;
+
+      // تذييل الحقوق
+      $('#rights').textContent = t.rights;
+
+      // رؤوس الأيام + عنوان الشهر + تقرير الطباعة
+      renderWeekdays();
+      renderCalendarTitle();
+      $('#reportTitle').textContent = `${t.reportTitle} — ${new Intl.DateTimeFormat(lang,{month:'long',year:'numeric'}).format(view)}`;
+      $('#thDate').textContent = t.thDate; $('#thWorked').textContent = t.thWorked; $('#thOT').textContent = t.thOT; $('#thTotal').textContent = t.thTotal;
+
+      // تحديث الملخص
+      updateSummary();
+    }
+
+    /* رسم رؤوس أيام الأسبوع — تم إصلاح الالتفاف/التشوه */
+    function renderWeekdays(){
+      const lang = store.lang; const t = i18n[lang] || i18n.de;
+      const dow = $('#dow'); dow.innerHTML = '';
+      for(const name of t.weekdays){
+        const el = document.createElement('div');
+        el.className = 'dow';
+        el.textContent = name;
+        dow.appendChild(el);
+      }
+    }
+
+    /* عنوان الشهر */
+    function renderCalendarTitle(){
+      const lang = store.lang;
+      $('#calTitle').textContent = new Intl.DateTimeFormat(lang, {month:'long', year:'numeric'}).format(view);
+    }
+
+    /* رسم شبكة الأيام بالكامل */
+    function renderCalendar(){
+      const y = view.getFullYear();
+      const m = view.getMonth();
+      renderCalendarTitle();
+
+      const first = new Date(y, m, 1);
+      const last  = new Date(y, m+1, 0);
+      const firstDow = (first.getDay() + 6) % 7; // تحويل getDay() ليبدأ الإثنين=0
+
+      const totalCells = firstDow + last.getDate();
+      const daysEl = $('#days'); daysEl.innerHTML = '';
+
+      for(let i=0;i<totalCells;i++){
+        const cell = document.createElement('div');
+
+        // خلايا بادئة (قبل اليوم 1) — فارغة مع تعتيم
+        if(i < firstDow){
+          cell.className = 'day disabled';
+          daysEl.appendChild(cell);
+          continue;
+        }
+
+        const d = i - firstDow + 1;               // رقم اليوم
+        const key = toKey(y,m,d);                 // YYYY-MM-DD
+        cell.className = 'day';
+
+        // تمييز اليوم الحالي
+        const today = new Date();
+        if(y===today.getFullYear() && m===today.getMonth() && d===today.getDate()){
+          cell.classList.add('today');
+        }
+
+        // رقم اليوم
+        const dnum = document.createElement('div');
+        dnum.className = 'dnum';
+        dnum.textContent = d;
+        cell.appendChild(dnum);
+
+        // شارة نتيجة ساعات اليوم (فقط المجموع)
+        const log = store.logs[key];
+        const res = document.createElement('div');
+        res.className = 'badge';
+        res.textContent = log ? fmtHM(log.worked) : (i18n[store.lang]||i18n.de).noData;
+        cell.appendChild(res);
+
+        // زر القلم (تعديل بيانات اليوم) — أيقونة بسيطة ولا تتضخم
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit';
+        editBtn.textContent = '✎';
+        editBtn.title = 'Edit';
+        editBtn.onclick = ()=>openDayModal(key);
+        cell.appendChild(editBtn);
+
+        daysEl.appendChild(cell);
+      }
+    }
+
+    /* تحديث ملخص الشهر (الإجمالي + الإضافي) */
+    function updateSummary(){
+      const y = view.getFullYear();
+      const m = view.getMonth();
+      const logs = store.logs;
+      let total=0, ot=0;
+      for(const k in logs){
+        const [yy,mm] = k.split('-').map(Number);
+        if(yy===y && mm===m+1){
+          total += logs[k].worked||0;
+          ot    += Math.max(0, (logs[k].worked||0) - store.hours*60);
+        }
+      }
+      $('#sum-month').textContent = fmtHM(total);
+      $('#sum-ot').textContent    = fmtHM(ot);
+    }
+
+    /* فتح نافذة إدخال اليوم */
+    function openDayModal(key){
+      activeKey = key;
+      const existing = store.logs[key];
+      const dt = new Date(key);
+      const lang = store.lang;
+
+      $('#modalTitle').textContent = new Intl.DateTimeFormat(lang, {weekday:'long', day:'numeric', month:'long', year:'numeric'}).format(dt);
+      $('#inStart').value  = existing?.start || '';
+      $('#inEnd').value    = existing?.end   || '';
+      $('#inBreak').value  = existing?.break ?? '';
+      $('#inResult').value = existing ? fmtHM(existing.worked) : '0:00';
+      $('#modalBg').style.display='flex';
+    }
+    function closeModal(){ $('#modalBg').style.display='none'; activeKey=null; }
+
+    /* حساب دقائق العمل لليوم الواحد */
+    function computeWorkedMins(start, end, brk){
+      if(!start || !end) return 0;
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      let s = sh*60 + sm, e = eh*60 + em;
+      if(e < s) e += 24*60;             // دعم عبور منتصف الليل
+      return Math.max(0, e - s - (parseInt(brk||0)));
+    }
+
+    /* ربط أحداث عناصر النافذة المنبثقة */
+    function wireModal(){
+      const recalc = ()=>{ $('#inResult').value = fmtHM(computeWorkedMins($('#inStart').value, $('#inEnd').value, $('#inBreak').value)); }
+      $('#inStart').addEventListener('input', recalc);
+      $('#inEnd').addEventListener('input', recalc);
+      $('#inBreak').addEventListener('input', recalc);
+
+      // حفظ اليوم
+      $('#btnSaveDay').onclick = ()=>{
+        if(!activeKey) return;
+        const start = $('#inStart').value;
+        const end   = $('#inEnd').value;
+        const brk   = parseInt($('#inBreak').value||0);
+        const t = i18n[store.lang]||i18n.de;
+        if(!start || !end){ alert(t.errTimes); return; }
+        const worked = computeWorkedMins(start, end, brk);
+        const logs = store.logs; logs[activeKey] = { start, end, break: brk, worked }; store.logs = logs;
+        renderCalendar(); updateSummary(); closeModal();
       };
-      const $ = s=>document.querySelector(s);
-      const pad = n=>String(n).padStart(2,'0');
-      const fmtHM = m=>{const s=Math.max(0,Math.round(m||0));return `${Math.floor(s/60)}:${pad(s%60)}`};
-      const toKey=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
-      const store={get hours(){return parseFloat(localStorage.getItem('officialDailyHours')||'0')||0},set hours(v){localStorage.setItem('officialDailyHours',String(v))},get logs(){return JSON.parse(localStorage.getItem('workLogs')||'{}')},set logs(o){localStorage.setItem('workLogs',JSON.stringify(o))},get lang(){return localStorage.getItem('lang')||autoDetectLang()},set lang(v){localStorage.setItem('lang',v)},reset(){localStorage.removeItem('workLogs');localStorage.removeItem('officialDailyHours')}};
-      let view=new Date(); let activeKey=null;
 
-      function autoDetectLang(){const nav=(navigator.language||'de').toLowerCase();if(nav.startsWith('ar'))return'ar';if(nav.startsWith('de'))return'de';return'de'}
+      // حذف بيانات اليوم
+      $('#btnDeleteDay').onclick = ()=>{
+        if(!activeKey) return;
+        const logs = store.logs; delete logs[activeKey]; store.logs = logs;
+        renderCalendar(); updateSummary(); closeModal();
+      };
 
-      function applyLang(){const lang=store.lang;const t=i18n[lang]||i18n.de;document.documentElement.lang=lang;document.documentElement.dir=(lang==='ar')?'rtl':'ltr';
-        $('#appTitle').textContent=t.appTitle; $('#lblMonthSum').textContent=t.monthSum; $('#lblOT').textContent=t.overtime; $('#lblLang').textContent=t.language; $('#lblSettings').textContent=t.settings; $('#lblReset').textContent=t.reset; $('#lblPrint').textContent=t.print; $('#setupTitle').textContent=t.setupTitle; $('#qOfficial').textContent=t.qOfficial; $('#hintOfficial').textContent=t.hintOfficial; $('#setupSkip').textContent=t.skip; $('#setupSave').textContent=t.next; $('#rights').textContent=t.rights; renderWeekdays(); renderCalendarTitle(); updateSummary(); $('#reportTitle').textContent=`${t.reportTitle} — ${new Intl.DateTimeFormat(lang,{month:'long',year:'numeric'}).format(view)}`; $('#thDate').textContent=t.thDate; $('#thWorked').textContent=t.thWorked; $('#thOT').textContent=t.thOT; $('#thTotal').textContent=t.thTotal; }
+      // إغلاق النافذة
+      $('#modalClose').onclick = closeModal;
+      $('#modalBg').addEventListener('click', (e)=>{ if(e.target.id==='modalBg') closeModal(); });
 
-      function renderWeekdays(){const lang=store.lang;const t=i18n[lang]||i18n.de;const dow=$('#dow'); if(!dow) return; dow.innerHTML=''; for(const name of t.weekdays){const el=document.createElement('div'); el.className='dow'; el.textContent=name; dow.appendChild(el);} }
-      function renderCalendarTitle(){const lang=store.lang; const el=$('#calTitle'); if(el) el.textContent=new Intl.DateTimeFormat(lang,{month:'long',year:'numeric'}).format(view); }
+      // تعبئة سريعة الآن
+      $('#btnNow').onclick = ()=>{
+        const now = new Date();
+        $('#inStart').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        $('#inEnd').value   = `${pad((now.getHours()+8)%24)}:${pad(now.getMinutes())}`;
+        $('#inBreak').value = 30;
+        $('#inResult').value = fmtHM(computeWorkedMins($('#inStart').value, $('#inEnd').value, $('#inBreak').value));
+      };
+    }
 
-      function renderCalendar(){const y=view.getFullYear(),m=view.getMonth(); renderCalendarTitle(); const first=new Date(y,m,1), last=new Date(y,m+1,0); const firstDow=(first.getDay()+6)%7; const totalCells=firstDow+last.getDate(); const daysEl=$('#days'); if(!daysEl) return; daysEl.innerHTML=''; for(let i=0;i<totalCells;i++){const cell=document.createElement('div'); if(i<firstDow){cell.className='day disabled';daysEl.appendChild(cell);continue;} const d=i-firstDow+1; const key=toKey(y,m,d); cell.className='day'; const today=new Date(); if(y===today.getFullYear()&&m===today.getMonth()&&d===today.getDate()) cell.classList.add('today'); const dnum=document.createElement('div'); dnum.className='dnum'; dnum.textContent=d; cell.appendChild(dnum); const meta=document.createElement('div'); const log=store.logs[key]; const res=document.createElement('div'); res.className='badge work'; res.textContent=log?fmtHM(log.worked):(i18n[store.lang]||i18n.de).noData; meta.appendChild(res); cell.appendChild(meta); const editBtn=document.createElement('button'); editBtn.className='btn edit'; editBtn.textContent='✎'; editBtn.onclick=()=>openDayModal(key); cell.appendChild(editBtn); daysEl.appendChild(cell);} }
+    /* أزرار تنقل الشهر + الطباعة + التصفير */
+    function wireCalendarNav(){
+      $('#prevMonth').onclick = ()=>{ view = new Date(view.getFullYear(), view.getMonth()-1, 1); renderCalendar(); updateSummary(); };
+      $('#nextMonth').onclick = ()=>{ view = new Date(view.getFullYear(), view.getMonth()+1, 1); renderCalendar(); updateSummary(); };
+      $('#btnResetAll').onclick = ()=>{ if(confirm('OK?')){ store.reset(); refreshVisibility(); renderCalendar(); updateSummary(); $('#setup').hidden=false; $('#calendar').hidden=true; } };
+      $('#btnPrint').onclick = ()=>{ buildReport(); window.print(); };
+    }
 
-      function updateSummary(){const y=view.getFullYear(),m=view.getMonth(); const logs=store.logs; let total=0,ot=0; for(const k in logs){const [yy,mm]=k.split('-').map(Number); if(yy===y&&mm===m+1){total+=logs[k].worked||0; ot+=Math.max(0,(logs[k].worked||0)-store.hours*60);}} $('#sum-month').textContent=fmtHM(total); $('#sum-ot').textContent=fmtHM(ot); }
+    /* إظهار شاشة الإعداد عند عدم وجود ساعات رسمية محفوظة */
+    function refreshVisibility(){ const hasHours = store.hours > 0; $('#setup').hidden = hasHours; $('#calendar').hidden = !hasHours; }
 
-      function openDayModal(key){activeKey=key; const existing=store.logs[key]; const lang=store.lang; const dt=new Date(key); $('#modalTitle').textContent=new Intl.DateTimeFormat(lang,{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(dt); $('#inStart').value=existing?.start||''; $('#inEnd').value=existing?.end||''; $('#inBreak').value=existing?.break??''; $('#inResult').value=existing?fmtHM(existing.worked):'0:00'; $('#modalBg').style.display='flex'; }
-      function closeModal(){const bg=$('#modalBg'); if(bg) bg.style.display='none'; activeKey=null; }
+    function initSetup(){
+      const input = $('#officialHours'); if(store.hours>0) input.value = store.hours;
+      $('#setupSave').onclick = ()=>{
+        const val = parseFloat(input.value); const t = i18n[store.lang]||i18n.de;
+        if(!val || val <= 0 || val>24){ alert(t.errHours); return; }
+        store.hours = val; refreshVisibility(); renderCalendar(); updateSummary();
+      };
+      $('#setupSkip').onclick = ()=>{ store.hours = 8; refreshVisibility(); renderCalendar(); updateSummary(); };
+      $('#btnEditPolicy').onclick = ()=>{ $('#setup').hidden = false; $('#calendar').hidden = true; };
+    }
 
-      function computeWorkedMins(start,end,brk){if(!start||!end) return 0; const [sh,sm]=start.split(':').map(Number); const [eh,em]=end.split(':').map(Number); let s=sh*60+sm, e=eh*60+em; if(e<s) e+=1440; return Math.max(0, e - s - (parseInt(brk||0)));}
+    /* تبديل اللغة يدويًا + حفظها محليًا */
+    function wireLang(){
+      const sel = $('#langSwitcher'); sel.value = store.lang;
+      sel.addEventListener('change', ()=>{ store.lang = sel.value; applyLang(); renderCalendar(); updateSummary(); });
+    }
 
-      function wireModal(){const recalc=()=>{$('#inResult').value=fmtHM(computeWorkedMins($('#inStart').value,$('#inEnd').value,$('#inBreak').value))}; ['#inStart','#inEnd','#inBreak'].forEach(id=>{$(id).addEventListener('input',recalc)}); $('#btnSaveDay').onclick=()=>{ if(!activeKey) return; const start=$('#inStart').value, end=$('#inEnd').value, brk=parseInt($('#inBreak').value||0); const t=i18n[store.lang]||i18n.de; if(!start||!end){alert(t.errTimes);return} const worked=computeWorkedMins(start,end,brk); const logs=store.logs; logs[activeKey]={start,end,break:brk,worked}; store.logs=logs; renderCalendar(); updateSummary(); closeModal(); }; $('#btnDeleteDay').onclick=()=>{ if(!activeKey) return; const logs=store.logs; delete logs[activeKey]; store.logs=logs; renderCalendar(); updateSummary(); closeModal(); }; $('#modalClose').onclick=closeModal; $('#modalBg').addEventListener('click',e=>{if(e.target.id==='modalBg') closeModal();}); $('#btnNow').onclick=()=>{const now=new Date(); $('#inStart').value=`${pad(now.getHours())}:${pad(now.getMinutes())}`; $('#inEnd').value=`${pad((now.getHours()+8)%24)}:${pad(now.getMinutes())}`; $('#inBreak').value=30; $('#inResult').value=fmtHM(computeWorkedMins($('#inStart').value,$('#inEnd').value,$('#inBreak').value));}; }
+    /* تجهيز بيانات التقرير للطباعة */
+    function buildReport(){
+      const lang = store.lang; const t = i18n[lang]||i18n.de;
+      const y = view.getFullYear(); const m = view.getMonth();
+      $('#reportTitle').textContent = `${t.reportTitle} — ${new Intl.DateTimeFormat(lang,{month:'long',year:'numeric'}).format(view)}`;
+      $('#reportMeta').textContent  = `${t.qOfficial}: ${store.hours}h`;
+      const body = $('#reportBody'); body.innerHTML='';
 
-      function wireCalendarNav(){ $('#prevMonth').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);renderCalendar();updateSummary();}; $('#nextMonth').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);renderCalendar();updateSummary();}; $('#btnResetAll').onclick=()=>{ if(confirm('OK?')){store.reset(); refreshVisibility(); renderCalendar(); updateSummary(); $('#setup').hidden=false; $('#calendar').hidden=true;} }; $('#btnPrint').onclick=()=>{ buildReport(); window.print(); }; }
+      let sumW=0, sumOT=0;
+      const last = new Date(y,m+1,0);
+      for(let d=1; d<=last.getDate(); d++){
+        const key = toKey(y,m,d);
+        const log = store.logs[key];
+        const worked = log?log.worked:0;
+        const ot = Math.max(0, worked - store.hours*60);
+        sumW += worked; sumOT += ot;
 
-      function refreshVisibility(){const hasHours=store.hours>0; $('#setup').hidden=hasHours; $('#calendar').hidden=!hasHours; }
-      function initSetup(){const input=$('#officialHours'); if(store.hours>0) input.value=store.hours; $('#setupSave').onclick=()=>{const val=parseFloat(input.value); const t=i18n[store.lang]||i18n.de; if(!val||val<=0||val>24){alert(t.errHours);return} store.hours=val; refreshVisibility(); renderCalendar(); updateSummary();}; $('#setupSkip').onclick=()=>{store.hours=8; refreshVisibility(); renderCalendar(); updateSummary();}; $('#btnEditPolicy').onclick=()=>{$('#setup').hidden=false; $('#calendar').hidden=true;}; }
-      function wireLang(){const sel=$('#langSwitcher'); sel.value=store.lang; sel.addEventListener('change',()=>{store.lang=sel.value; applyLang(); renderCalendar(); updateSummary();}); }
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td'); td1.style='border:1px solid #777; padding:6px; text-align:center';
+        const td2 = document.createElement('td'); td2.style=td1.style;
+        const td3 = document.createElement('td'); td3.style=td1.style;
 
-      function buildReport(){const lang=store.lang; const t=i18n[lang]||i18n.de; const y=view.getFullYear(), m=view.getMonth(); $('#reportTitle').textContent=`${t.reportTitle} — ${new Intl.DateTimeFormat(lang,{month:'long',year:'numeric'}).format(view)}`; $('#reportMeta').textContent=`${t.qOfficial}: ${store.hours}h`; const body=$('#reportBody'); body.innerHTML=''; let sumW=0,sumOT=0; const last=new Date(y,m+1,0); for(let d=1; d<=last.getDate(); d++){const key=toKey(y,m,d); const log=store.logs[key]; const worked=log?log.worked:0; const ot=Math.max(0, worked - store.hours*60); sumW+=worked; sumOT+=ot; const tr=document.createElement('tr'); const td1=document.createElement('td'); td1.style='border:1px solid #777; padding:6px; text-align:center'; td1.textContent=new Intl.DateTimeFormat(lang,{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(y,m,d)); const td2=document.createElement('td'); td2.style=td1.style; td2.textContent=log?fmtHM(worked): (t.noData.includes('—')?'—':t.noData); const td3=document.createElement('td'); td3.style=td1.style; td3.textContent=fmtHM(ot); tr.append(td1,td2,td3); body.appendChild(tr);} $('#tdSumWorked').textContent=fmtHM(sumW); $('#tdSumOT').textContent=fmtHM(sumOT); }
+        td1.textContent = new Intl.DateTimeFormat(lang,{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(y,m,d));
+        td2.textContent = log ? fmtHM(worked) : (t.noData.includes('—') ? '—' : t.noData);
+        td3.textContent = fmtHM(ot);
 
-      const yr=new Date().getFullYear(); $('#year').textContent=yr; $('#yearFoot').textContent=yr;
-      if(!localStorage.getItem('lang')) store.lang=autoDetectLang(); wireLang(); applyLang(); initSetup(); refreshVisibility(); renderCalendar(); updateSummary(); wireCalendarNav(); wireModal(); if(!(store.hours>0)) $('#setup').hidden=false; else $('#calendar').hidden=false;
-    });
+        tr.append(td1,td2,td3); body.appendChild(tr);
+      }
+      $('#tdSumWorked').textContent = fmtHM(sumW);
+      $('#tdSumOT').textContent     = fmtHM(sumOT);
+    }
+
+    /* ======================== تشغيل التطبيق ======================== */
+    (function init(){
+      // سنة الحقوق في التذييل والتقرير
+      const yr = new Date().getFullYear(); $('#year').textContent = yr; $('#yearFoot').textContent = yr;
+
+      // إعداد اللغة المبدئية (تلقائي ثم حفظ)
+      if(!localStorage.getItem('lang')){ store.lang = autoDetectLang(); }
+      wireLang(); applyLang();
+
+      // تفعيل الشاشات والأزرار
+      initSetup(); refreshVisibility(); renderCalendar(); updateSummary(); wireCalendarNav(); wireModal();
+
+      // عرض التقويم أو الإعداد حسب وجود الساعات الرسمية
+      if(!(store.hours>0)) $('#setup').hidden=false; else $('#calendar').hidden=false;
+    })();
   </script>
 
-  <!-- Modal -->
+  <!-- النافذة المنبثقة تُوضع أخيرًا لضمان وجود العناصر قبل JS -->
   <div class="modal-backdrop" id="modalBg" role="dialog" aria-modal="true">
     <div class="modal">
       <header class="wrap" style="padding:12px 16px; display:flex; align-items:center; justify-content:space-between">
