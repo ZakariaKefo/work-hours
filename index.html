@@ -212,19 +212,19 @@
       </header>
       <div class="content">
         <div class="row">
-          <div class="q"><label id="lblStart">بداية الدوام</label><input id="inStart" type="time" /></div>
-          <div class="q"><label id="lblEnd">نهاية الدوام</label><input id="inEnd" type="time" /></div>
+          <div class="q"><label id="lblStart">Arbeitsbeginn</label><input id="inStart" type="time" /></div>
+          <div class="q"><label id="lblEnd">Arbeitsende</label><input id="inEnd" type="time" /></div>
         </div>
         <div class="row">
-          <div class="q"><label id="lblBreak">مدة الاستراحة (بالدقائق)</label><input id="inBreak" type="number" min="0" step="5" placeholder="30" /></div>
-          <div class="q"><label id="lblTotal">المحصلة لليوم</label><input id="inResult" type="text" disabled value="0:00" /></div>
+          <div class="q"><label id="lblBreak">Pause (Minuten)</label><input id="inBreak" type="number" min="0" step="5" placeholder="30" /></div>
+          <div class="q"><label id="lblTotal">Tagesergebnis</label><input id="inResult" type="text" disabled value="0:00" /></div>
         </div>
       </div>
       <div class="footer">
-        <button class="btn" id="btnDeleteDay">🗑️ <span id="lblDeleteDay">حذف بيانات اليوم</span></button>
+        <button class="btn" id="btnDeleteDay">🗑️ <span id="lblDeleteDay">Tag löschen</span></button>
         <div style="display:flex; gap:10px">
-          <button class="btn" id="btnNow">⏱️ <span id="lblNow">الآن</span></button>
-          <button class="btn btn-primary" id="btnSaveDay">💾 <span id="lblSave">حفظ</span></button>
+          <button class="btn" id="btnNow">⏱️ <span id="lblNow">Jetzt</span></button>
+          <button class="btn btn-primary" id="btnSaveDay">💾 <span id="lblSave">Speichern</span></button>
         </div>
       </div>
     </div>
@@ -235,7 +235,7 @@
     /* ==== ترجمة ==== */
     const i18n = {
       de:{appTitle:'Arbeitszeitrechner',monthSum:'Stunden dieses Monats',overtime:'Überstunden',language:'Sprache',settings:'Einstellungen',reset:'Zurücksetzen',print:'PDF-Bericht',setupTitle:'Schnelle Einrichtung',qOfficial:'Offizielle tägliche Arbeitszeit (Stunden)',hintOfficial:'Diese Einstellung wird gespeichert. Du kannst sie später in den Einstellungen ändern.',skip:'Überspringen',next:'Weiter',weekdays:['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'],start:'Arbeitsbeginn',end:'Arbeitsende',break:'Pause (Minuten)',total:'Tagesergebnis',deleteDay:'Tag löschen',now:'Jetzt',save:'Speichern',noData:'—',rights:'Alle Rechte vorbehalten',errHours:'Bitte eine Zahl zwischen 1 und 24 eingeben.',errTimes:'Bitte Beginn und Ende eingeben.',reportTitle:'Monatsbericht',thDate:'Datum',thWorked:'Arbeitszeit',thOT:'Überstunden',thTotal:'Summe'},
-      ar:{appTitle:'حاسِب ساعات العمل',monthSum:'ساعات هذا الشهر',overtime:'العمل الإضافي',language:'اللغة',settings:'الإعدادات',reset:'تصفير',print:'تقرير PDF',setupTitle:'إعداد سريع',qOfficial:'عدد ساعات العمل الرسمية يوميًا (بالساعات)',hintOfficial:'سيتم حفظ هذا الإعداد ويمكن تغييره لاحقًا من الإعدادات.',skip:'تخطي',next:'التالي',weekdays:['الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت','الأحد'],start:'بداية الدوام',end:'نهاية الدوام',break:'مدة الاستراحة (بالدقائق)',total:'المحصلة لليوم',deleteDay:'حذف بيانات اليوم',now:'الآن',save:'حفظ',noData:'—',rights:'جميع الحقوق محفوظة',errHours:'يرجى إدخال رقم صحيح بين 1 و 24',errTimes:'يرجى إدخال وقت البداية والنهاية',reportTitle:'تقرير الشهر',thDate:'التاريخ',thWorked:'العمل',thOT:'إضافي',thTotal:'الإجمالي'}
+      ar:{appTitle:'حاسِب ساعات العمل',monthSum:'ساعات هذا الشهر',overtime:'العمل الإضافي',language:'اللغة',settings:'الإعدادات',reset:'تصفير',print:'تقرير PDF',setupTitle:'إعداد سريع',qOfficial:'عدد ساعات العمل الرسمية يوميًا (بالساعات)',hintOfficial:'سيتم حفظ هذا الإعداد ويمكن تغييره لاحقًا من الإعدادات.',skip:'تخطي',next:'التالي',weekdays:['الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت','الأحد'],start:'بداية الدوام',end:'نهاية الدوام',break:'مدة الاستراحة (بالدقائق)',total:'المحصلة لليوم',deleteDay:'حذف بيانات اليوم',now:'الآن',save:'حفظ',noData:'— لا بيانات —',rights:'جميع الحقوق محفوظة',errHours:'يرجى إدخال رقم صحيح بين 1 و 24',errTimes:'يرجى إدخال وقت البداية والنهاية',reportTitle:'تقرير الشهر',thDate:'التاريخ',thWorked:'العمل',thOT:'إضافي',thTotal:'الإجمالي'}
     };
 
     /* ==== أدوات مساعدة ==== */
